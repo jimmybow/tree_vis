@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import tree 
 import colorlover as cl
 import copy
+import os
 
 fea_type = np.array(['num', 'num', 'num', 'num'])
 fea_positive =  np.array([True, True, True, True])
