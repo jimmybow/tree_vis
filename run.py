@@ -225,7 +225,7 @@ def myfun(*x):
     xx = test_x.iloc[0].copy()
     ww = np.where(ww_fea_used)[0]
     for i in range(n_fea):  xx[ww[i]] = x[i]
-    try: r = html.Div('預測值： ' + str(Tree.predict(xx)[0]),  style = {'color':'blue'})
+    try: r = html.Div('預測值： ' + str(Tree.predict(xx.as_matrix().reshape((1, -1)))[0]),  style = {'color':'blue'})
     except ValueError: 
         r = html.Div('請輸入數值而非文字',  style = {'color':'red'})    
     return(r)
@@ -274,8 +274,7 @@ def myfhgun(sel, bb1, bb2):
             xx = test_x.iloc[0].copy()
             ww = np.where(ww_fea_used)[0]
             for i in range(n_fea):  xx[ww[i]] = x[i]
-            str(Tree.predict(xx)[0])
-            path = np.where(Tree.decision_path(xx).toarray())[1]
+            path = np.where(Tree.decision_path(xx.as_matrix().reshape((1, -1))).toarray())[1]
             path_e = [str(path[i-1]) + '-' + str(path[i])    for i in range(1, len(path))]
             for i in range(Tree.tree_.node_count): 
                 if ddd['nodes'][i]['id'] not in path: ddd['nodes'][i]['color'] = 'hsla(0, 0%, 80%, 0.36)'     
