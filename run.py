@@ -9,7 +9,6 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, Event, State
-import webbrowser
 from flask import Flask
 import visdcc
 import pandas as pd
@@ -149,6 +148,7 @@ glo['b2'] = {'n':0, 'run': False}
         
 # Dash 
 server = Flask(__name__)
+server.secret_key = os.environ.get('secret_key', 'secret')
 app = dash.Dash(name = __name__, server = server)
 app.config.supress_callback_exceptions = True
 
@@ -300,7 +300,3 @@ def myfhgun():
     glo['b1']['run'] =  True   
     glo['b2']['run'] =  False   
     return(str(glo['b1'])) 
-
-if __name__ == '__main__':
-    webbrowser.open('http://127.0.0.1:5000/', new=0, autoraise=True) 
-    server.run(debug=True, use_reloader=False)
