@@ -19,6 +19,7 @@ from sklearn import tree
 import colorlover as cl
 import copy
 import os
+import json
 
 fea_type = np.array(['num', 'num', 'num', 'num'])
 fea_positive =  np.array([True, True, True, True])
@@ -75,14 +76,14 @@ for i in range(Tree.tree_.node_count):
 
 data['edges'] = [{'id': str(i) + '-' + str(Tree.tree_.children_left[i]),
                   'hidden': False, 
-                  'from': i, 
-                  'to': Tree.tree_.children_left[i],
+                  'from': int(i), 
+                  'to': int(Tree.tree_.children_left[i]),
                   'color': 'red',
                   'title': 'Yes' } for i in np.where(ww_split)[0] ] + [
                 {'id': str(i) + '-' + str(Tree.tree_.children_right[i]),
                   'hidden': False,
-                  'from': i, 
-                  'to': Tree.tree_.children_right[i],
+                  'from': int(i), 
+                  'to': int(Tree.tree_.children_right[i]),
                   'color': 'blue',
                   'title': 'No' } for i in np.where(ww_split)[0] ]
 
@@ -139,13 +140,6 @@ tb_layout = dict(title = '錯誤分類表：',
                  titlefont = dict(size = 35, color = '#8d5413'),
                  margin = dict(l = 140, b = 60, t = 60),
                  dragmode = "pan"                )
-     
-
-#全域
-glo = {}
-glo['sel'] = 0
-glo['b1'] = {'n':0, 'run': False}
-glo['b2'] = {'n':0, 'run': False}
         
 # Dash 
 server = Flask(__name__)
@@ -157,9 +151,11 @@ my_css_url = "https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css"
 app.css.append_css({
     "external_url": my_css_url
 })
-
+  
 app.layout = html.Div([
-      html.Div(id = 'b1'), html.Div(id = 'b2'),    
+      html.Div(json.dumps(data), id = 'data', style = {'display':'none'}),
+      html.Div(id = 'x_input', style = {'display':'none'}),        
+      html.Div('{"b1_e": null, "b2_e": null}', id = 'nclick', style = {'display':'none'}),         
       html.H1('Iris 鳶尾花品種預測', 
               style = {'color': '#ae6c0d', 'display':'inline-block', 'width': '80%',
                        'text-align': 'center', 'vertical-align':'top'}),
@@ -231,46 +227,47 @@ def myfun(*x):
     return(r)
 
 @app.callback(
-    Output('pre_value', 'input'),
-    events = [Event('fea_' + str(i), 'change') for i in range(n_fea)],
-    state = [State('fea_' + str(i), 'value') for i in range(n_fea)] )  
+    Output('x_input', 'children'),
+    [Input('fea_' + str(i), 'value') for i in range(n_fea)])
 def myfun(*x): 
-    glo['str'] = '-'.join(x)
-    return('')
+    return('-'.join(x))
 
 @app.callback(
-    Output('right-hand', 'input'),
-    [Input('net', 'selection')])
-def myfun(sel): 
+    Output('data', 'children'),
+    [Input('net', 'selection')],
+    state = [State('data', 'children')])
+def myfun(sel, init): 
+    ddd = json.loads(init)
     if len(sel['nodes']) > 0 :
         iid = sel['nodes'][0]
-        state = data['nodes'][iid]['show_leaf'] 
-        data['nodes'][iid]['show_leaf'] = not state
-        from_id = [data['edges'][i]['from'] for i in range(len(data['edges']))]    
+        state = ddd['nodes'][iid]['show_leaf'] 
+        ddd['nodes'][iid]['show_leaf'] = not state
+        from_id = [ddd['edges'][i]['from'] for i in range(len(ddd['edges']))]    
         while True:
             ww = np.where(np.isin(from_id, iid))[0]
             if ww.sum() == 0 : break
             for i in ww:
-                data['edges'][i]['hidden'] = state
-                to = data['edges'][i]['to']
-                data['nodes'][to]['hidden'] = state
-                data['nodes'][to]['show_leaf'] = True    
-            iid = [data['edges'][i]['to'] for i in ww]    
-            
-    if glo['sel'] > 100 : glo['sel'] = 0       
-    glo['sel'] = glo['sel'] + 1        
-    return(glo['sel'])
+                ddd['edges'][i]['hidden'] = state
+                to = ddd['edges'][i]['to']
+                ddd['nodes'][to]['hidden'] = state
+                ddd['nodes'][to]['show_leaf'] = True    
+            iid = [ddd['edges'][i]['to'] for i in ww]    
+                  
+    return(json.dumps(ddd))
 
 @app.callback(
     Output('net', 'data'),
-    [Input('right-hand', 'input'),
-     Input('b1','input'),
-     Input('b2','input')])
-def myfhgun(sel, bb1, bb2): 
-    ddd = copy.deepcopy(data)
-    if glo['b1']['run']:
-        try:
-            x = glo['str'].split('-')
+    [Input('data', 'children'),
+     Input('nclick', 'children')],
+    state = [State('x_input', 'children')])    
+def myfhgun(sel_data, nclick, sss): 
+    ddd = json.loads(sel_data)
+    rrr = json.loads(nclick)  
+    try:    
+        if rrr['b1_s'] == None: rrr['b1_s'] = 0
+        if rrr['b1_e'] == None: rrr['b1_e'] = 0          
+        if rrr['b1_s'] < rrr['b1_e']:
+            x = sss.split('-')
             xx = test_x.iloc[0].copy()
             ww = np.where(ww_fea_used)[0]
             for i in range(n_fea):  xx[ww[i]] = x[i]
@@ -280,23 +277,14 @@ def myfhgun(sel, bb1, bb2):
                 if ddd['nodes'][i]['id'] not in path: ddd['nodes'][i]['color'] = 'hsla(0, 0%, 80%, 0.36)'     
             for i in range(len(ddd['edges'])):   
                 if ddd['edges'][i]['id'] not in path_e: ddd['edges'][i]['color'] = 'hsla(0, 0%, 80%, 0.36)' 
-        except : pass
+    except : pass
     return(ddd) 
 
 @app.callback(
-    Output('b2', 'input'),
-    events = [Event('button2', 'click')])
-def myfhgun():        
-    glo['b2']['n'] = glo['b2']['n'] + 1   
-    glo['b2']['run'] =  True   
-    glo['b1']['run'] =  False    
-    return(str(glo['b2']))    
-
-@app.callback(
-    Output('b1', 'input'),
-    events = [Event('button', 'click')])
-def myfhgun():        
-    glo['b1']['n'] = glo['b2']['n'] + 1   
-    glo['b1']['run'] =  True   
-    glo['b2']['run'] =  False   
-    return(str(glo['b1'])) 
+    Output('nclick', 'children'),
+    [Input('button', 'n_clicks'),
+     Input('button2', 'n_clicks')],    
+    state = [State('nclick', 'children')])
+def myfhgun(b1, b2, ini):
+    rr = json.loads(ini)
+    return(json.dumps({'b1_s': rr['b1_e'], 'b1_e': b1, 'b2_s': rr['b2_e'], 'b2_e':b2}))   
