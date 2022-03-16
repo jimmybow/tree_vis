@@ -1,0 +1,8 @@
+dash
+dash-renderer
+pandas
+numpy
+scikit-learn
+colorlover
+visdcc
+gunicorn==19.7.1
