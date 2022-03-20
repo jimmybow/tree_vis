@@ -76,13 +76,13 @@ data['edges'] = [{'id': str(i) + '-' + str(Tree.tree_.children_left[i]),
                   'hidden': False, 
                   'from': int(i), 
                   'to': int(Tree.tree_.children_left[i]),
-                  'color': 'red',
+                  'color': {'color': 'red', 'highlight': 'red', 'hover':'red'},
                   'title': 'Yes' } for i in np.where(ww_split)[0] ] + [
                 {'id': str(i) + '-' + str(Tree.tree_.children_right[i]),
                   'hidden': False,
                   'from': int(i), 
                   'to': int(Tree.tree_.children_right[i]),
-                  'color': 'blue',
+                  'color': {'color': 'blue', 'highlight': 'blue', 'hover':'blue'},
                   'title': 'No' } for i in np.where(ww_split)[0] ]
 
 options = {
@@ -109,7 +109,7 @@ data_legend['nodes'] = [{'id' : i, 'label': np.array(iris.feature_names)[ww_fea_
 data_legend['edges'] = []    
 options_legend = {'interaction':{'dragView': False, 'dragNodes': False, 'zoomView': False},
                   'physics': {'enabled': False},
-                  'height': 100*n_fea }       
+                  'height': str(100*n_fea) }       
 
 # 錯誤分類表
 conf = dict(scrollZoom = True,
@@ -271,7 +271,7 @@ def myfhgun(sel_data, button_id , sss):
             for i in range(Tree.tree_.node_count): 
                 if ddd['nodes'][i]['id'] not in path: ddd['nodes'][i]['color'] = 'hsla(0, 0%, 80%, 0.36)'     
             for i in range(len(ddd['edges'])):   
-                if ddd['edges'][i]['id'] not in path_e: ddd['edges'][i]['color'] = 'hsla(0, 0%, 80%, 0.36)' 
+                if ddd['edges'][i]['id'] not in path_e: ddd['edges'][i]['color'] = {'color': 'hsla(0, 0%, 80%, 0.36)', 'highlight': 'hsla(0, 0%, 80%, 0.36)', 'hover':'hsla(0, 0%, 80%, 0.36)'}
     except : pass
     return(ddd) 
 
@@ -286,4 +286,4 @@ def myfhgun(b1, b2, ini):
     return(ctx.triggered[0]['prop_id'].split('.')[0])   
 
 if __name__ == '__main__':
-    server.run(debug=True, host='0.0.0.0', port = 8050)
+    app.run_server(debug=True, port = 8050)
