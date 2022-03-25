@@ -5,9 +5,9 @@ Created on Thu Aug 24 09:57:14 2017
 @author: jimmybow
 """
 
-import dash
-from dash import dcc
-from dash import html
+from dash import (
+    Dash, Input, Output, State, html, dcc, callback_context as ctx
+)
 from dash.dependencies import Input, Output, State
 from flask import Flask
 import visdcc
@@ -26,13 +26,13 @@ df = pd.DataFrame(np.column_stack((iris.data, iris.target_names[iris.target])),
                   columns = ['sepal_len', 'sepal_wid', 'petal_len', 'petal_wid', 'Species'])
 
 # random_state = 42 確保我們每次執行的結果相同
-train_x, test_x, train_y, test_y = train_test_split(df.drop('Species', 1), df.Species , random_state = 42, test_size = 0.3)
+train_x, test_x, train_y, test_y = train_test_split(df.drop('Species', axis=1), df.Species , random_state = 42, test_size = 0.3)
 
 # 決策樹 建模
-Tree = tree.DecisionTreeClassifier(random_state = 42).fit(train_x, train_y)
+Tree = tree.DecisionTreeClassifier(random_state = 42).fit(train_x.values, train_y.values)
 
 # 預測值
-pred = Tree.predict(test_x)
+pred = Tree.predict(test_x.values)
 
 # 模型評估
 # 混淆矩陣
@@ -141,12 +141,11 @@ tb_layout = dict(title = '錯誤分類表：',
         
 # Dash 
 server = Flask(__name__)
-app = dash.Dash(
-    __name__
-    ,server = server
-    ,external_stylesheets=["https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css"]
+app = Dash(
+    server=server,
+    suppress_callback_exceptions = True,
+    external_stylesheets=["https://cdnjs.cloudflare.com/ajax/libs/vis/4.20.1/vis.min.css"]
 )
-app.config.suppress_callback_exceptions = True
 
 app.layout = html.Div([
       html.Div(json.dumps(data), id = 'data', style = {'display':'none'}),
@@ -214,7 +213,6 @@ def myfun(x):
     [Input('button', 'n_clicks')],
     [State('fea_' + str(i), 'value') for i in range(n_fea)] )  
 def myfun(*x):
-    ctx = dash.callback_context
     if not ctx.triggered or ctx.triggered[0]['value'] is None:  return ""
     xx = test_x.iloc[0].copy()
     ww = np.where(ww_fea_used)[0]
@@ -281,7 +279,6 @@ def myfhgun(sel_data, button_id , sss):
      Input('button2', 'n_clicks')],    
     [State('button_id', 'children')])
 def myfhgun(b1, b2, ini):
-    ctx = dash.callback_context
     if not ctx.triggered or ctx.triggered[0]['value'] is None:  return ""
     return(ctx.triggered[0]['prop_id'].split('.')[0])   
 
